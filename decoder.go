@@ -56,6 +56,13 @@ func (d *Decoder) IgnoreUnknownKeys(i bool) {
 
 // RegisterConverter registers a converter function for a custom type.
 func (d *Decoder) RegisterConverter(value interface{}, converterFunc Converter) {
+	d.RegisterExtendedConverter(value, func(s string) (reflect.Value, error) {
+		return converterFunc(s), nil
+	})
+}
+
+// RegisterExtendedConverter registers an extended converter function for a custom type.
+func (d *Decoder) RegisterExtendedConverter(value interface{}, converterFunc ExtendedConverter) {
 	d.cache.registerConverter(value, converterFunc)
 }
 

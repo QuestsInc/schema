@@ -1234,8 +1234,8 @@ func TestRegisterConverter(t *testing.T) {
 	}{}
 	decoder := NewDecoder()
 
-	decoder.RegisterConverter(s1.Aa, func(s string) (reflect.Value, error) { return reflect.ValueOf(1), nil })
-	decoder.RegisterConverter(s1.Bb, func(s string) (reflect.Value, error) { return reflect.ValueOf(2), nil })
+	decoder.RegisterConverter(s1.Aa, func(s string) reflect.Value { return reflect.ValueOf(1) })
+	decoder.RegisterConverter(s1.Bb, func(s string) reflect.Value { return reflect.ValueOf(2) })
 
 	v1 := map[string][]string{"Aa": {"4"}, "Bb": {"5"}}
 	decoder.Decode(s1, v1)
@@ -1251,8 +1251,8 @@ func TestRegisterConverter(t *testing.T) {
 // Issue #40
 func TestRegisterConverterSlice(t *testing.T) {
 	decoder := NewDecoder()
-	decoder.RegisterConverter([]string{}, func(input string) (reflect.Value, error) {
-		return reflect.ValueOf(strings.Split(input, ",")), nil
+	decoder.RegisterConverter([]string{}, func(input string) reflect.Value {
+		return reflect.ValueOf(strings.Split(input, ","))
 	})
 
 	result := struct {
@@ -1273,7 +1273,7 @@ func TestRegisterConverterSlice(t *testing.T) {
 func TestRegisterConverterMap(t *testing.T) {
 	decoder := NewDecoder()
 	decoder.IgnoreUnknownKeys(false)
-	decoder.RegisterConverter(map[string]string{}, func(input string) (reflect.Value, error) {
+	decoder.RegisterConverter(map[string]string{}, func(input string) reflect.Value {
 		m := make(map[string]string)
 		for _, pair := range strings.Split(input, ",") {
 			parts := strings.Split(pair, ":")
@@ -1282,7 +1282,7 @@ func TestRegisterConverterMap(t *testing.T) {
 				m[parts[0]] = parts[1]
 			}
 		}
-		return reflect.ValueOf(m), nil
+		return reflect.ValueOf(m)
 	})
 
 	result := struct {
@@ -1866,7 +1866,7 @@ func TestRegisterConverterOverridesTextUnmarshaler(t *testing.T) {
 	decoder := NewDecoder()
 
 	ts := time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)
-	decoder.RegisterConverter(s1.MyTime, func(s string) (reflect.Value, error) { return reflect.ValueOf(ts), nil })
+	decoder.RegisterConverter(s1.MyTime, func(s string) reflect.Value { return reflect.ValueOf(ts) })
 
 	v1 := map[string][]string{"MyTime": {"4"}, "Bb": {"5"}}
 	decoder.Decode(s1, v1)

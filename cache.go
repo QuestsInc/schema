@@ -18,7 +18,7 @@ var invalidPath = errors.New("schema: invalid path")
 func newCache() *cache {
 	c := cache{
 		m:       make(map[reflect.Type]*structInfo),
-		regconv: make(map[reflect.Type]Converter),
+		regconv: make(map[reflect.Type]ExtendedConverter),
 		tag:     "schema",
 	}
 	return &c
@@ -28,12 +28,12 @@ func newCache() *cache {
 type cache struct {
 	l       sync.RWMutex
 	m       map[reflect.Type]*structInfo
-	regconv map[reflect.Type]Converter
+	regconv map[reflect.Type]ExtendedConverter
 	tag     string
 }
 
 // registerConverter registers a converter function for a custom type.
-func (c *cache) registerConverter(value interface{}, converterFunc Converter) {
+func (c *cache) registerConverter(value interface{}, converterFunc ExtendedConverter) {
 	c.regconv[reflect.TypeOf(value)] = converterFunc
 }
 
@@ -201,7 +201,7 @@ func (c *cache) createField(field reflect.StructField, parentAlias string) *fiel
 }
 
 // converter returns the converter for a type.
-func (c *cache) converter(t reflect.Type) Converter {
+func (c *cache) converter(t reflect.Type) ExtendedConverter {
 	return c.regconv[t]
 }
 

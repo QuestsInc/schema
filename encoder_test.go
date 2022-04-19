@@ -106,7 +106,7 @@ func TestCompat(t *testing.T) {
 	decoder := NewDecoder()
 
 	encoder.RegisterEncoder(src.F15, func(reflect.Value) string { return "1" })
-	decoder.RegisterConverter(src.F15, func(string) (reflect.Value, error) { return reflect.ValueOf(1), nil })
+	decoder.RegisterConverter(src.F15, func(string) reflect.Value { return reflect.ValueOf(1) })
 
 	err := encoder.Encode(src, vals)
 	if err != nil {
@@ -189,11 +189,11 @@ func TestCompatSlices(t *testing.T) {
 	encoder.RegisterEncoder(ones[0], func(v reflect.Value) string { return "one" })
 
 	decoder := NewDecoder()
-	decoder.RegisterConverter(ones[0], func(s string) (reflect.Value, error) {
+	decoder.RegisterConverter(ones[0], func(s string) reflect.Value {
 		if s == "one" {
-			return reflect.ValueOf(1), nil
+			return reflect.ValueOf(1)
 		}
-		return reflect.ValueOf(2), nil
+		return reflect.ValueOf(2)
 	})
 
 	err := encoder.Encode(src, vals)

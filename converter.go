@@ -9,7 +9,8 @@ import (
 	"strconv"
 )
 
-type Converter func(string) (reflect.Value, error)
+type Converter func(string) reflect.Value
+type ExtendedConverter func(string) (reflect.Value, error)
 
 var (
 	invalidValue = reflect.Value{}
@@ -30,7 +31,7 @@ var (
 )
 
 // Default converters for basic types.
-var builtinConverters = map[reflect.Kind]Converter{
+var builtinConverters = map[reflect.Kind]ExtendedConverter{
 	boolType:    convertBool,
 	float32Type: convertFloat32,
 	float64Type: convertFloat64,
