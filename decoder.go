@@ -257,7 +257,10 @@ func (d *Decoder) decode(v reflect.Value, path string, parts []pathPart, values 
 				if d.zeroEmpty {
 					items = append(items, reflect.Zero(elemT))
 				}
-			} else if m.IsValid {
+				continue
+			}
+
+			if m.IsValid {
 				u := reflect.New(elemT)
 				if m.IsSliceElementPtr {
 					u = reflect.New(reflect.PtrTo(elemT).Elem())
@@ -277,7 +280,11 @@ func (d *Decoder) decode(v reflect.Value, path string, parts []pathPart, values 
 				} else {
 					items = append(items, u)
 				}
-			} else if item := conv(value); item.IsValid() {
+				continue
+			}
+
+			item, err := conv(value)
+			if err == nil && item.IsValid() {
 				if isPtrElem {
 					ptr := reflect.New(elemT)
 					ptr.Elem().Set(item)
@@ -287,38 +294,44 @@ func (d *Decoder) decode(v reflect.Value, path string, parts []pathPart, values 
 					item = item.Convert(elemT)
 				}
 				items = append(items, item)
-			} else {
-				if strings.Contains(value, ",") {
-					values := strings.Split(value, ",")
-					for _, value := range values {
-						if value == "" {
-							if d.zeroEmpty {
-								items = append(items, reflect.Zero(elemT))
-							}
-						} else if item := conv(value); item.IsValid() {
-							if isPtrElem {
-								ptr := reflect.New(elemT)
-								ptr.Elem().Set(item)
-								item = ptr
-							}
-							if item.Type() != elemT && !isPtrElem {
-								item = item.Convert(elemT)
-							}
-							items = append(items, item)
-						} else {
-							return ConversionError{
-								Key:   path,
-								Type:  elemT,
-								Index: key,
-							}
+				continue
+			}
+
+			if strings.Contains(value, ",") {
+				values := strings.Split(value, ",")
+				for _, value := range values {
+					if value == "" {
+						if d.zeroEmpty {
+							items = append(items, reflect.Zero(elemT))
+						}
+						continue
+					}
+
+					if item, err := conv(value); err == nil && item.IsValid() {
+						if isPtrElem {
+							ptr := reflect.New(elemT)
+							ptr.Elem().Set(item)
+							item = ptr
+						}
+						if item.Type() != elemT && !isPtrElem {
+							item = item.Convert(elemT)
+						}
+						items = append(items, item)
+					} else {
+						return ConversionError{
+							Key:   path,
+							Type:  elemT,
+							Index: key,
+							Err:   err,
 						}
 					}
-				} else {
-					return ConversionError{
-						Key:   path,
-						Type:  elemT,
-						Index: key,
-					}
+				}
+			} else {
+				return ConversionError{
+					Key:   path,
+					Type:  elemT,
+					Index: key,
+					Err:   err,
 				}
 			}
 		}
@@ -332,13 +345,14 @@ func (d *Decoder) decode(v reflect.Value, path string, parts []pathPart, values 
 		}
 
 		if conv != nil {
-			if value := conv(val); value.IsValid() {
+			if value, err := conv(val); err == nil && value.IsValid() {
 				v.Set(value.Convert(t))
 			} else {
 				return ConversionError{
 					Key:   path,
 					Type:  t,
 					Index: -1,
+					Err:   err,
 				}
 			}
 		} else if m.IsValid {
@@ -370,13 +384,14 @@ func (d *Decoder) decode(v reflect.Value, path string, parts []pathPart, values 
 				v.Set(reflect.Zero(t))
 			}
 		} else if conv := builtinConverters[t.Kind()]; conv != nil {
-			if value := conv(val); value.IsValid() {
+			if value, err := conv(val); err == nil && value.IsValid() {
 				v.Set(value.Convert(t))
 			} else {
 				return ConversionError{
 					Key:   path,
 					Type:  t,
 					Index: -1,
+					Err:   err,
 				}
 			}
 		} else {
